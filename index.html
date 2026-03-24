@@ -77,6 +77,31 @@ textarea{width:100%;margin-top:7px;border:1px solid #dde;border-radius:4px;paddi
 .hl{background:#fef08a;border-radius:2px}
 .filter-group{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 @media(max-width:700px){.card-body{flex-direction:column}.topbar h1{font-size:13px}.search-box{width:130px}}
+
+/* ── Lightbox ── */
+#lb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9000;
+  align-items:center;justify-content:center;flex-direction:column}
+#lb-overlay.open{display:flex}
+#lb-wrap{position:relative;max-width:95vw;max-height:90vh;cursor:zoom-in;overflow:hidden;
+  display:flex;align-items:center;justify-content:center}
+#lb-wrap.zoomed{cursor:grab}
+#lb-wrap.zoomed.dragging{cursor:grabbing}
+#lb-img{max-width:95vw;max-height:85vh;object-fit:contain;border-radius:4px;
+  transform-origin:center center;transition:transform .15s;display:block;user-select:none}
+#lb-caption{color:#ccc;font-size:12px;margin-top:8px;text-align:center;max-width:90vw;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#lb-close{position:fixed;top:14px;right:20px;color:#fff;font-size:28px;cursor:pointer;
+  line-height:1;opacity:.8;z-index:9001;background:none;border:none;padding:4px 10px}
+#lb-close:hover{opacity:1}
+#lb-prev,#lb-next{position:fixed;top:50%;transform:translateY(-50%);color:#fff;
+  font-size:36px;cursor:pointer;opacity:.6;background:rgba(0,0,0,.3);border:none;
+  padding:10px 14px;border-radius:6px;z-index:9001;user-select:none}
+#lb-prev:hover,#lb-next:hover{opacity:1;background:rgba(0,0,0,.6)}
+#lb-prev{left:10px}
+#lb-next{right:10px}
+#lb-counter{position:fixed;top:14px;left:50%;transform:translateX(-50%);
+  color:#ccc;font-size:12px;background:rgba(0,0,0,.5);padding:3px 10px;border-radius:10px}
+#lb-hint{color:#666;font-size:11px;margin-top:4px}
 </style>
 </head>
 <body>
@@ -457,7 +482,7 @@ function pairCardHTML(p, d) {
     <span class="sp-label"><b>[${p.qcol_short}]</b> ${hl(p.qid)} · ${hl(p.qname.substring(0,32))} &nbsp;↔&nbsp; <b>[${p.ncol_short}]</b> ${hl(p.nid)} · ${hl(p.nname.substring(0,32))}</span>
     <span class="saved-ind" id="si${p.idx}">${si}</span></div>
   <div class="card-body">
-    <div class="img-wrap"><img class="pair-img" src="${p.img}" loading="lazy"></div>
+    <div class="img-wrap"><img class="pair-img" src="${p.img}" loading="lazy" onclick="lbOpenByIdx('pairs',${p.idx})" style="cursor:zoom-in"></div>
     <div class="meta">
       <table class="meta-table">
         <tr><td>Query folder</td><td><code>${p.qfld}</code></td></tr>
@@ -489,7 +514,7 @@ function unkCardHTML(u, d) {
     <span class="sp-label"><b>Folder:</b> ${hl(u.folder)} · ${u.img_count} ảnh</span>
     <span class="saved-ind" id="usi${u.idx}">${si}</span></div>
   <div class="card-body">
-    <div class="img-wrap"><img class="pair-img" src="${u.img}" loading="lazy"></div>
+    <div class="img-wrap"><img class="pair-img" src="${u.img}" loading="lazy" onclick="lbOpenByIdx('unknown',${u.idx})" style="cursor:zoom-in"></div>
     <div class="meta">
       <table class="meta-table">
         <tr><td colspan="3" style="font-weight:700;padding-bottom:6px">Top ứng viên (cosine sim):</td></tr>
@@ -521,7 +546,7 @@ function confusedCardHTML(c, d) {
     <span class="sp-label"><b>[${c.col_a_s}]</b> ${hl(c.wid_a)} · ${hl(c.name_a.substring(0,32))} &nbsp;↔&nbsp; <b>[${c.col_b_s}]</b> ${hl(c.wid_b)} · ${hl(c.name_b.substring(0,32))}</span>
     <span class="saved-ind" id="csi${c.idx}">${si}</span></div>
   <div class="card-body">
-    <div class="img-wrap"><img class="pair-img" src="${c.img}" loading="lazy"></div>
+    <div class="img-wrap"><img class="pair-img" src="${c.img}" loading="lazy" onclick="lbOpenByIdx('confused',${c.idx})" style="cursor:zoom-in"></div>
     <div class="meta">
       <table class="meta-table">
         <tr><td>Loài A</td><td><b>${c.wid_a}</b> · ${c.name_a}</td></tr>
@@ -564,7 +589,7 @@ function identityCardHTML(it, d) {
     <span class="sp-label"><b>${hl(it.wood_id)}</b> · ${hl(it.science_name.substring(0,45))}</span>
     <span class="saved-ind" id="isi${it.idx}">${si}</span></div>
   <div class="card-body">
-    <div class="img-wrap"><img class="pair-img" src="${it.img}" loading="lazy"></div>
+    <div class="img-wrap"><img class="pair-img" src="${it.img}" loading="lazy" onclick="lbOpenByIdx('identity',${it.idx})" style="cursor:zoom-in"></div>
     <div class="meta">
       <table class="meta-table">
         <tr><td>Wood ID</td><td><b>${it.wood_id}</b></td></tr>
@@ -686,5 +711,186 @@ const d0=loadData();
 filteredPairs=[...PAIRS]; filteredUnknowns=[...UNKNOWNS]; filteredIdentity=[...IDENTITY]; filteredConfused=[...CONFUSED];
 renderPairs(d0); renderUnknowns(d0); renderIdentity(d0); renderConfused(d0);
 updateProgress();
+
+
+// ── Lightbox ──────────────────────────────────────────────────────────────────
+// State
+var lbImgList = [], lbCaps = [], lbIdx = 0;
+var lbScale = 1, lbPanX = 0, lbPanY = 0;
+var lbDragging = false, lbDx0 = 0, lbDy0 = 0, lbPx0 = 0, lbPy0 = 0;
+var lbPinchDist = 0;
+var lbCurrentTab = '';
+
+// Build caption for one item
+function lbCaption(tab, item) {
+  if (tab === 'pairs')
+    return '#' + String(item.idx).padStart(3,'0') + ' ['+item.qcol_short+'] ' + item.qname + ' \u2194 ['+item.ncol_short+'] ' + item.nname;
+  if (tab === 'unknown')
+    return '\u2753 ' + item.folder + ' (' + item.img_count + ' \u1ea3nh)';
+  if (tab === 'identity')
+    return item.wood_id + ' ' + item.science_name + ' (rank=' + item.rank + ', sim=' + item.self_sim.toFixed(4) + ')';
+  if (tab === 'confused')
+    return '#' + String(item.idx).padStart(2,'0') + ' ['+item.col_a_s+'] ' + item.name_a + ' \u2194 ['+item.col_b_s+'] ' + item.name_b;
+  return '';
+}
+
+// Open lightbox by tab name + item idx (called from inline onclick)
+function lbOpenByIdx(tab, itemIdx) {
+  var srcMap = {pairs:filteredPairs, unknown:filteredUnknowns, identity:filteredIdentity, confused:filteredConfused};
+  var list = srcMap[tab];
+  if (!list || !list.length) { console.warn('lbOpenByIdx: empty list for', tab); return; }
+  var i = -1;
+  for (var k = 0; k < list.length; k++) { if (list[k].idx == itemIdx) { i = k; break; } }
+  if (i < 0) i = 0;
+  lbCurrentTab = tab;
+  lbImgList = list.map(function(x){ return x.img; });
+  lbCaps    = list.map(function(x){ return lbCaption(tab, x); });
+  lbIdx     = i;
+  lbScale = 1; lbPanX = 0; lbPanY = 0;
+  document.getElementById('lb-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  lbShow();
+}
+
+function lbClose() {
+  document.getElementById('lb-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function lbBgClick(e) {
+  if (e.target === document.getElementById('lb-overlay')) lbClose();
+}
+
+function lbShow() {
+  var img  = document.getElementById('lb-img');
+  var wrap = document.getElementById('lb-wrap');
+  lbScale = 1; lbPanX = 0; lbPanY = 0;
+  wrap.classList.remove('zoomed','dragging');
+  img.src = lbImgList[lbIdx];
+  lbApplyTransform();
+  document.getElementById('lb-caption').textContent = lbCaps[lbIdx] || lbImgList[lbIdx];
+  document.getElementById('lb-counter').textContent = (lbIdx+1) + ' / ' + lbImgList.length;
+  document.getElementById('lb-prev').style.visibility = lbIdx > 0 ? 'visible' : 'hidden';
+  document.getElementById('lb-next').style.visibility = lbIdx < lbImgList.length-1 ? 'visible' : 'hidden';
+}
+
+function lbNav(dir) {
+  var ni = lbIdx + dir;
+  if (ni < 0 || ni >= lbImgList.length) return;
+  lbIdx = ni;
+  lbShow();
+}
+
+function lbApplyTransform() {
+  document.getElementById('lb-img').style.transform =
+    'translate(' + lbPanX + 'px,' + lbPanY + 'px) scale(' + lbScale + ')';
+}
+
+// Double-click: toggle zoom
+function lbToggleZoom(e) {
+  var wrap = document.getElementById('lb-wrap');
+  if (lbScale > 1) {
+    lbScale = 1; lbPanX = 0; lbPanY = 0;
+    wrap.classList.remove('zoomed');
+  } else {
+    var rect = document.getElementById('lb-img').getBoundingClientRect();
+    var cx = e.clientX - rect.left - rect.width  / 2;
+    var cy = e.clientY - rect.top  - rect.height / 2;
+    lbScale = 3;
+    lbPanX  = -cx * (lbScale - 1) / lbScale;
+    lbPanY  = -cy * (lbScale - 1) / lbScale;
+    wrap.classList.add('zoomed');
+  }
+  lbApplyTransform();
+}
+
+// Scroll wheel zoom
+function lbWheel(e) {
+  e.preventDefault();
+  var factor = e.deltaY < 0 ? 1.15 : 0.87;
+  lbScale = Math.min(8, Math.max(1, lbScale * factor));
+  document.getElementById('lb-wrap').classList.toggle('zoomed', lbScale > 1);
+  if (lbScale <= 1) { lbPanX = 0; lbPanY = 0; }
+  lbApplyTransform();
+}
+
+// Mouse drag pan
+function lbDragStart(e) {
+  if (lbScale <= 1) return;
+  e.preventDefault();
+  lbDragging = true; lbDx0 = e.clientX; lbDy0 = e.clientY;
+  lbPx0 = lbPanX; lbPy0 = lbPanY;
+  document.getElementById('lb-wrap').classList.add('dragging');
+}
+function lbDragMove(e) {
+  if (!lbDragging) return;
+  lbPanX = lbPx0 + (e.clientX - lbDx0);
+  lbPanY = lbPy0 + (e.clientY - lbDy0);
+  lbApplyTransform();
+}
+function lbDragEnd() {
+  lbDragging = false;
+  document.getElementById('lb-wrap').classList.remove('dragging');
+}
+
+// Touch
+function lbTouchStart(e) {
+  if (e.touches.length === 2) {
+    lbPinchDist = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY);
+  } else if (e.touches.length === 1 && lbScale > 1) {
+    lbDragging = true;
+    lbDx0 = e.touches[0].clientX; lbDy0 = e.touches[0].clientY;
+    lbPx0 = lbPanX; lbPy0 = lbPanY;
+  }
+}
+function lbTouchMove(e) {
+  e.preventDefault();
+  if (e.touches.length === 2) {
+    var dist = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY);
+    lbScale = Math.min(8, Math.max(1, lbScale * dist / lbPinchDist));
+    lbPinchDist = dist;
+    document.getElementById('lb-wrap').classList.toggle('zoomed', lbScale > 1);
+    if (lbScale <= 1) { lbPanX = 0; lbPanY = 0; }
+    lbApplyTransform();
+  } else if (e.touches.length === 1 && lbDragging) {
+    lbPanX = lbPx0 + (e.touches[0].clientX - lbDx0);
+    lbPanY = lbPy0 + (e.touches[0].clientY - lbDy0);
+    lbApplyTransform();
+  }
+}
+function lbTouchEnd() { lbDragging = false; }
+
+// Keyboard
+document.addEventListener('keydown', function(e) {
+  if (!document.getElementById('lb-overlay').classList.contains('open')) return;
+  if      (e.key === 'Escape')      lbClose();
+  else if (e.key === 'ArrowRight')  lbNav(+1);
+  else if (e.key === 'ArrowLeft')   lbNav(-1);
+  else if (e.key === '+' || e.key === '=') { lbScale = Math.min(8, lbScale * 1.2); document.getElementById('lb-wrap').classList.add('zoomed'); lbApplyTransform(); }
+  else if (e.key === '-') { lbScale = Math.max(1, lbScale / 1.2); if (lbScale<=1){lbPanX=0;lbPanY=0;document.getElementById('lb-wrap').classList.remove('zoomed');} lbApplyTransform(); }
+  else if (e.key === '0') { lbScale=1;lbPanX=0;lbPanY=0; document.getElementById('lb-wrap').classList.remove('zoomed'); lbApplyTransform(); }
+});
+
 </script>
+
+<!-- ── Lightbox Modal ── -->
+<div id="lb-overlay" onclick="lbBgClick(event)">
+  <button id="lb-close" onclick="lbClose()" title="Đóng (Esc)">✕</button>
+  <span id="lb-counter"></span>
+  <button id="lb-prev" onclick="lbNav(-1)" title="Ảnh trước (←)">‹</button>
+  <div id="lb-wrap" ondblclick="lbToggleZoom(event)" onwheel="lbWheel(event)">
+    <img id="lb-img" src="" draggable="false"
+         onmousedown="lbDragStart(event)" onmousemove="lbDragMove(event)"
+         onmouseup="lbDragEnd()" onmouseleave="lbDragEnd()"
+         ontouchstart="lbTouchStart(event)" ontouchmove="lbTouchMove(event)"
+         ontouchend="lbTouchEnd(event)">
+  </div>
+  <button id="lb-next" onclick="lbNav(+1)" title="Ảnh sau (→)">›</button>
+  <div id="lb-caption"></div>
+  <div id="lb-hint">Double-click / scroll để zoom · Kéo để pan · ← → để chuyển ảnh · Esc để đóng</div>
+</div>
+
 </body></html>
