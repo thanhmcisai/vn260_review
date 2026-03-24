@@ -555,9 +555,6 @@ function confusedCardHTML(c, d) {
         <tr><td>Collection B</td><td>${c.col_b} (${c.n_b} ảnh)</td></tr>
         <tr><td>Centroid sim</td><td><span style="color:${simCol};font-weight:700">${c.sim.toFixed(4)}</span>${simBar(c.sim)}</td></tr>
       </table>
-      <div class="notice" style="margin-bottom:8px;font-size:11px">
-        <b>🌀 Phân tích mức loài</b>: nhóm theo (wood_id × collection), sample <b>25 ảnh</b> từ toàn bộ ảnh của loài (không chỉ 1 subfolder). Khác Tab 1: loài có nhiều subfolder → Tab 1 tạo nhiều centroid, Tab này gộp thành 1. Cặp này <b>không có trong Tab 1</b>.
-      </div>
       <div class="verdict-box"><div class="verdict-title">Verdict:</div>${opts}
         <textarea id="cta${c.idx}" rows="2" oninput="onNote('confused',${c.idx})" placeholder="Ghi chú...">${n}</textarea>
       </div></div></div></div>`;
