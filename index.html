@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VN260 — Suspicious Folder Pairs Review</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:#f0f2f5;color:#222;font-size:14px}
+
+/* TOP BAR */
+.topbar{background:#1a1a2e;color:#fff;padding:12px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:200;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.topbar h1{font-size:16px;flex:1}
+.topbar .sub{font-size:11px;color:#9ab;margin-top:2px}
+
+/* TOOLBAR */
+.toolbar{background:#fff;padding:8px 20px;border-bottom:1px solid #dde;position:sticky;top:54px;z-index:190;display:flex;align-items:center;gap:8px;flex-wrap:wrap;box-shadow:0 2px 4px rgba(0,0,0,.06)}
+.btn{padding:5px 13px;border:none;border-radius:5px;cursor:pointer;font-size:12px;font-weight:600;transition:opacity .15s}
+.btn:hover{opacity:.85}
+.btn-blue{background:#0d6efd;color:#fff}
+.btn-red{background:#dc3545;color:#fff}
+.btn-filter{background:#eef;color:#334;border:1px solid #ccd}
+.btn-filter.act{background:#1a1a2e;color:#fff;border-color:#1a1a2e}
+.progress-wrap{flex:1;min-width:160px}
+.prog-label{font-size:11px;color:#666;margin-bottom:2px}
+.prog-bg{height:7px;background:#e2e8f0;border-radius:4px;overflow:hidden}
+.prog-fill{height:100%;background:#22c55e;border-radius:4px;transition:width .3s}
+
+/* STATS BAR */
+.statsbar{display:flex;gap:0;background:#fff;border-bottom:1px solid #dde}
+.stat{flex:1;text-align:center;padding:10px 8px;border-right:1px solid #eef}
+.stat:last-child{border-right:none}
+.stat .n{font-size:24px;font-weight:700}
+.stat .l{font-size:10px;color:#888;margin-top:1px}
+
+/* CONTENT */
+.content{max-width:1360px;margin:0 auto;padding:12px 16px}
+.section-head{font-size:17px;font-weight:700;margin:18px 0 10px;padding-bottom:6px;border-bottom:2px solid #dde;display:flex;align-items:center;gap:8px}
+.section-badge{font-size:12px;color:#888;font-weight:400}
+
+/* CARD */
+.card{background:#fff;border-radius:8px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.1);border-left:4px solid transparent;overflow:hidden}
+.card.cross{border-left-color:#dc3545}
+.card.same {border-left-color:#fd7e14}
+.card-hdr{padding:9px 14px;background:#fafafa;border-bottom:1px solid #eee;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pnum{font-weight:700;font-size:15px;color:#555;min-width:40px}
+.badge{color:#fff;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700}
+.bg-red{background:#dc3545}.bg-orange{background:#fd7e14}.bg-blue{background:#0d6efd}.bg-green{background:#16a34a}
+.sp-label{font-size:12px;flex:1;line-height:1.4}
+.saved-ind{font-size:11px;margin-left:auto;white-space:nowrap;color:#16a34a;font-weight:600}
+.card-body{display:flex;gap:12px;padding:10px 14px;flex-wrap:wrap}
+.img-wrap{flex:3;min-width:200px}
+.pair-img{width:100%;border-radius:5px;border:1px solid #dde;cursor:zoom-in;display:block;background:#222}
+.img-loading{width:100%;height:180px;background:#f0f2f5;border-radius:5px;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:12px}
+.meta{flex:1;min-width:240px}
+.meta-table{font-size:11px;border-collapse:collapse;width:100%;margin-bottom:8px}
+.meta-table td{padding:3px 6px;border-bottom:1px solid #f4f4f4;vertical-align:top}
+.meta-table td:first-child{color:#777;white-space:nowrap;width:110px}
+code{background:#f0f2f5;padding:1px 4px;border-radius:3px;font-size:10px;word-break:break-all}
+.verdict-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:9px 11px}
+.verdict-title{font-weight:700;font-size:11px;margin-bottom:5px;color:#555}
+.vopt{display:flex;align-items:center;gap:6px;margin:3px 0;font-size:12px;cursor:pointer;padding:3px 6px;border-radius:4px}
+.vopt:hover{background:#f0f2f5}
+.vopt input{cursor:pointer}
+textarea{width:100%;margin-top:7px;border:1px solid #dde;border-radius:4px;padding:5px;font-size:11px;resize:vertical;font-family:inherit;background:#fff}
+
+/* PAGINATION */
+.pager{display:flex;align-items:center;justify-content:center;gap:6px;padding:16px 0;flex-wrap:wrap}
+.page-btn{padding:6px 12px;border:1px solid #ccd;border-radius:5px;background:#fff;cursor:pointer;font-size:13px;font-weight:500;min-width:36px;text-align:center}
+.page-btn:hover{background:#f0f2f5}
+.page-btn.current{background:#1a1a2e;color:#fff;border-color:#1a1a2e}
+.page-btn:disabled{opacity:.4;cursor:default}
+.page-info{font-size:12px;color:#666;padding:0 8px}
+.pager-top{margin-bottom:4px}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:40px;color:#aaa;font-size:13px}
+
+/* NOTICE */
+.notice{background:#fffbeb;border:1px solid #fbbf24;border-radius:6px;padding:9px 14px;font-size:12px;margin-bottom:12px;line-height:1.6}
+
+@media(max-width:700px){.card-body{flex-direction:column}.topbar h1{font-size:13px}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div style="flex:1">
+    <div class="sub">VN260 Wood Dataset</div>
+    <h1>Suspicious Folder Pairs — RIFI Expert Review</h1>
+  </div>
+</div>
+
+<div class="toolbar" id="toolbar">
+  <button class="btn btn-blue" onclick="exportCSV()">⬇ Export CSV</button>
+  <button class="btn btn-red"  onclick="clearAll()">🗑 Reset</button>
+  <span style="font-size:11px;color:#888">Filter:</span>
+  <button class="btn btn-filter act" data-filter="all"       onclick="setFilter(this)">All</button>
+  <button class="btn btn-filter"     data-filter="unreviewed" onclick="setFilter(this)">⬜ Chưa review</button>
+  <button class="btn btn-filter"     data-filter="ok"         onclick="setFilter(this)">✅ OK</button>
+  <button class="btn btn-filter"     data-filter="swap"       onclick="setFilter(this)">🔄 Swap</button>
+  <button class="btn btn-filter"     data-filter="same"       onclick="setFilter(this)">⚠️ Same</button>
+  <button class="btn btn-filter"     data-filter="unsure"     onclick="setFilter(this)">❓ Unsure</button>
+  <select id="perPageSel" onchange="setPerPage(+this.value)" style="padding:4px 8px;border:1px solid #ccd;border-radius:5px;font-size:12px">
+    <option value="5">5/trang</option>
+    <option value="10" selected>10/trang</option>
+    <option value="20">20/trang</option>
+    <option value="50">50/trang</option>
+  </select>
+  <div class="progress-wrap">
+    <div class="prog-label">Tiến độ: <span id="prog-txt">0/109 reviewed</span></div>
+    <div class="prog-bg"><div class="prog-fill" id="prog-bar" style="width:0%"></div></div>
+  </div>
+</div>
+
+<div class="statsbar">
+  <div class="stat"><div class="n" style="color:#dc3545">59</div><div class="l">Cross-collection<br>sim &gt; 0.90</div></div>
+  <div class="stat"><div class="n" style="color:#fd7e14">50</div><div class="l">Same-collection<br>sim &gt; 0.95</div></div>
+  <div class="stat"><div class="n" style="color:#7c3aed">9</div><div class="l">Very high<br>sim ≥ 0.97</div></div>
+  <div class="stat"><div class="n">109</div><div class="l">Unique pairs<br>364 folders</div></div>
+</div>
+
+<div class="content">
+  <div class="notice">
+    💾 <b>Ghi chú tự động lưu</b> vào localStorage của browser — không mất khi reload.
+    Dùng <b>⬇ Export CSV</b> để tải kết quả về. Mỗi trang hiển thị 10 cặp để tải nhanh hơn.
+  </div>
+  <div id="render-area"></div>
+</div>
+
+<script>
+const PAIRS = [{"idx": 1, "qcol": "phase2_ghana", "qfld": "3456.Gmelina arborea", "qid": "3456", "qname": "Gmelina Arborea", "ncol": "phase2_rifi", "nfld": "3339.Gmelina sp", "nid": "3339", "nname": "Gmelina Sp", "sim": 0.9625, "note": "cross-collection", "img": "pair_001_P2G_3456_vs_P2R_3339.jpg", "qcol_short": "P2G", "ncol_short": "P2R"}, {"idx": 2, "qcol": "phase1_tlu", "qfld": "3301", "qid": "3301", "qname": "Acacia Melanoxylon", "ncol": "phase2_rifi", "nfld": "3340.Acacia mangium", "nid": "3340", "nname": "Acacia Mangium", "sim": 0.9621, "note": "cross-collection", "img": "pair_002_P1T_3301_vs_P2R_3340.jpg", "qcol_short": "P1T", "ncol_short": "P2R"}, {"idx": 3, "qcol": "phase2_ghana", "qfld": "3462.Mammea africana", "qid": "3462", "qname": "Mammea Africana", "ncol": "phase2_rifi", "nfld": "3414.Dalbergia rimosa", "nid": "3414", "nname": "Dalbergia Rimosa", "sim": 0.9599, "note": "cross-collection", "img": "pair_003_P2G_3462_vs_P2R_3414.jpg", "qcol_short": "P2G", "ncol_short": "P2R"}, {"idx": 4, "qcol": "phase1_rifi", "qfld": "3290.Engelhardtia chrysolepis (Engelhardia roxburghiana)", "qid": "3290", "qname": "Engelhardtia Chrysolepis (Engelhardia Roxburghiana)", "ncol": "phase2_rifi", "nfld": "3331.Cinnamomum balansae", "nid": "3331", "nname": "Cinnamomum Balansae", "sim": 0.9586, "note": "cross-collection", "img": "pair_004_P1R_3290_vs_P2R_3331.jpg", "qcol_short": "P1R", "ncol_short": "P2R"}, {"idx": 5, "qcol": "phase1_rifi", "qfld": "3303.Terminalia superba", "qid": "3303", "qname": "Terminalia Superba", "ncol": "phase1_tlu", "nfld": "3236", "nid": "3236", "nname": "Pachyelasma Tessmannii", "sim": 0.9566, "note": "cross-collection", "img": "pair_005_P1R_3303_vs_P1T_3236.jpg", "qcol_short": "P1R", "ncol_short": "P1T"}, {"idx": 6, "qcol": "phase1_rifi", "qfld": "3249.Afzelia pachyloba", "qid": "3249", "qname": "Afzelia Pachyloba", "ncol": "phase2_ghana", "nfld": "3486.Gilbertiodendron limba", "nid": "3486", "nname": "Gilbertiodendron Limba", "sim": 0.9553, "note": "cross-collection", "img": "pair_006_P1R_3249_vs_P2G_3486.jpg", "qcol_short": "P1R", "ncol_short": "P2G"}, {"idx": 7, "qcol": "phase1_rifi", "qfld": "3289.Palaquium Waburgianum", "qid": "3289", "qname": "Palaquium Waburgianum", "ncol": "phase2_ghana", "nfld": "3432.Afzelia bella", "nid": "3432", "nname": "Afzelia Bella", "sim": 0.9528, "note": "cross-collection", "img": "pair_007_P1R_3289_vs_P2G_3432.jpg", "qcol_short": "P1R", "ncol_short": "P2G"}, {"idx": 8, "qcol": "phase2_rifi", "qfld": "3405.Koompassia malaccensis", "qid": "3405", "qname": "Koompassia Malaccensis", "ncol": "phase1_rifi", "nfld": "3249.Afzelia pachyloba", "nid": "3249", "nname": "Afzelia Pachyloba", "sim": 0.9507, "note": "cross-collection", "img": "pair_008_P2R_3405_vs_P1R_3249.jpg", "qcol_short": "P2R", "ncol_short": "P1R"}, {"idx": 9, "qcol": "phase1_rifi", "qfld": "3288.Bunkella obovata", "qid": "3288", "qname": "Bunkella Obovata", "ncol": "phase2_rifi", "nfld": "3426.Burckella obovata", "nid": "3426", "nname": "Burckella Obovata", "sim": 0.9498, "note": "cross-collection", "img": "pair_009_P1R_3288_vs_P2R_3426.jpg", "qcol_short": "P1R", "ncol_short": "P2R"}, {"idx": 10, "qcol": "phase1_rifi", "qfld": "3241.Cinnamomum camphora", "qid": "3241", "qname": "Cinnamomum Camphora", "ncol": "phase2_ghana", "nfld": "3468.Petersianthus macrocarpus", "nid": "3468", "nname": "Petersianthus Macrocarpus", "sim": 0.9497, "note": "cross-collection", "img": "pair_010_P1R_3241_vs_P2G_3468.jpg", "qcol_short": "P1R", "ncol_short": "P2G"}, {"idx": 11, "qcol": "phase1_rifi", "qfld": "3235.Nauclea diderrichii", "qid": "3235", "qname": "Nauclea Diderrichii", "ncol": "phase2_rifi", "nfld": "3381.Sindora tonkinensis", "nid": "3381", "nname": "Sindora Tonkinensis", "sim": 0.9475, "note": "cross-collection", "img": "pair_011_P1R_3235_vs_P2R_3381.jpg", "qcol_short": "P1R", "ncol_short": "P2R"}, {"idx": 12, "qcol": "phase2_ghana", "qfld": "3457.Guibourtia ehie", "qid": "3457", "qname": "Guibourtia Ehie", "ncol": "phase1_rifi", "nfld": "3249.Afzelia pachyloba", "nid": "3249", "nname": "Afzelia Pachyloba", "sim": 0.9452, "note": "cross-collection", "img": "pair_012_P2G_3457_vs_P1R_3249.jpg", "qcol_short": "P2G", "ncol_short": "P1R"}, {"idx": 13, "qcol": "phase1_rifi", "qfld": "3323.Allophylus cobbe (Pometia pinnata)", "qid": "3323", "qname": "Allophylus Cobbe (Pometia Pinnata)", "ncol": "phase2_ghana", "nfld": "3486.Gilbertiodendron limba", "nid": "3486", "nname": "Gilbertiodendron Limba", "sim": 0.9449, "note": "cross-collection", "img": "pair_013_P1R_3323_vs_P2G_3486.jpg", "qcol_short": "P1R", "ncol_short": "P2G"}, {"idx": 14, "qcol": "phase2_rifi", "qfld": "3395.Pterocarpus indicus", "qid": "3395", "qname": "Pterocarpus Indicus", "ncol": "phase1_rifi", "nfld": "3289.Palaquium Waburgianum", "nid": "3289", "nname": "Palaquium Waburgianum", "sim": 0.9449, "note": "cross-collection", "img": "pair_014_P2R_3395_vs_P1R_3289.jpg", "qcol_short": "P2R", "ncol_short": "P1R"}, {"idx": 15, "qcol": "phase1_rifi", "qfld": "3242.Piptadeniastrum africanum", "qid": "3242", "qname": "Piptadeniastrum Africanum", "ncol": "phase2_rifi", "nfld": "3405.Koompassia malaccensis", "nid": "3405", "nname": "Koompassia Malaccensis", "sim": 0.9444, "note": "cross-collection", "img": "pair_015_P1R_3242_vs_P2R_3405.jpg", "qcol_short": "P1R", "ncol_short": "P2R"}, {"idx": 16, "qcol": "phase1_tlu", "qfld": "3289", "qid": "3289", "qname": "Palaquium Waburgianum", "ncol": "phase2_rifi", "nfld": "3395.Pterocarpus indicus", "nid": "3395", "nname": "Pterocarpus Indicus", "sim": 0.9442, "note": "cross-collection", "img": "pair_016_P1T_3289_vs_P2R_3395.jpg", "qcol_short": "P1T", "ncol_short": "P2R"}, {"idx": 17, "qcol": "phase2_rifi", "qfld": "3425.Hopea sangal", "qid": "3425", "qname": "Hopea Sangal", "ncol": "phase2_ghana", "nfld": "3457.Guibourtia ehie", "nid": "3457", "nname": "Guibourtia Ehie", "sim": 0.9442, "note": "cross-collection", "img": "pair_017_P2R_3425_vs_P2G_3457.jpg", "qcol_short": "P2R", "ncol_short": "P2G"}, {"idx": 18, "qcol": "phase1_rifi", "qfld": "3280.Dalbergia cochinchinensis", "qid": "3280", "qname": "Dalbergia Cochinchinensis", "ncol": "phase2_rifi", "nfld": "3353.Dalbergia tonkinensis", "nid": "3353", "nname": "Dalbergia Tonkinensis", "sim": 0.9402, "note": "cross-collection", "img": "pair_018_P1R_3280_vs_P2R_3353.jpg", "qcol_short": "P1R", "ncol_short": "P2R"}, {"idx": 19, "qcol": "phase2_ghana", "qfld": "3452.Daniella thurifera", "qid": "3452", "qname": "Daniella Thurifera", "ncol": "phase2_rifi", "nfld": "3395.Pterocarpus indicus", "nid": "3395", "nname": "Pterocarpus Indicus", "sim": 0.94, "note": "cross-collection", "img": "pair_019_P2G_3452_vs_P2R_3395.jpg", "qcol_short": "P2G", "ncol_short": "P2R"}, {"idx": 20, "qcol": "phase1_rifi", "qfld": "3302.Hopea pierrei", "qid": "3302", "qname": "Hopea Pierrei", "ncol": "phase2_rifi", "nfld": "3388.Cinnamomum glaucescens", "nid": "3388", "nname": "Cinnamomum Glaucescens", "sim": 0.9383, "note": "cross-collection", "img": "pair_020_P1R_3302_vs_P2R_3388.jpg", "qcol_short": "P1R", "ncol_short": "P2R"}, {"idx": 21, "qcol": "phase1_tlu", "qfld": "3329", "qid": "3329", "qname": "Khaya Senegalensis", "ncol": "phase2_rifi", "nfld": "3346.Canarium bengalense", "nid": "3346", "nname": "Canarium Bengalense", "sim": 0.9376, "note": "cross-collection", "img": "pair_021_P1T_3329_vs_P2R_3346.jpg", "qcol_short": "P1T", "ncol_short": "P2R"}, {"idx": 22, "qcol": "phase1_rifi", "qfld": "3275.Entandrophragma cylindricum", "qid": "3275", "qname": "Entandrophragma Cylindricum", "ncol": "phase2_rifi", "nfld": "3356.Dipterocarpus retusus", "nid": "3356", "nname": "Dipterocarpus Retusus", "sim": 0.9374, "note": "cross-collection", "img": "pair_022_P1R_3275_vs_P2R_3356.jpg", "qcol_short": "P1R", "ncol_short": "P2R"}, {"idx": 23, "qcol": "phase1_rifi", "qfld": "3265.Distemonanthus benthamianus", "qid": "3265", "qname": "Distemonanthus Benthamianus", "ncol": "phase2_rifi", "nfld": "3425.Hopea sangal", "nid": "3425", "nname": "Hopea Sangal", "sim": 0.9359, "note": "cross-collection", "img": "pair_023_P1R_3265_vs_P2R_3425.jpg", "qcol_short": "P1R", "ncol_short": "P2R"}, {"idx": 24, "qcol": "phase1_rifi", "qfld": "3234.Myroxylon peruiferum", "qid": "3234", "qname": "Myroxylon Peruiferum", "ncol": "phase2_ghana", "nfld": "3457.Guibourtia ehie", "nid": "3457", "nname": "Guibourtia Ehie", "sim": 0.9356, "note": "cross-collection", "img": "pair_024_P1R_3234_vs_P2G_3457.jpg", "qcol_short": "P1R", "ncol_short": "P2G"}, {"idx": 25, "qcol": "phase1_rifi", "qfld": "3261.Hymenaea courbaril", "qid": "3261", "qname": "Hymenaea Courbaril", "ncol": "phase2_ghana", "nfld": "3468.Petersianthus macrocarpus", "nid": "3468", "nname": "Petersianthus Macrocarpus", "sim": 0.9354, "note": "cross-collection", "img": "pair_025_P1R_3261_vs_P2G_3468.jpg", "qcol_short": "P1R", "ncol_short": "P2G"}, {"idx": 26, "qcol": "phase2_rifi", "qfld": "3365.Paulownia sp", "qid": "3365", "qname": "Paulownia Sp", "ncol": "phase2_ghana", "nfld": "3456.Gmelina arborea", "nid": "3456", "nname": "Gmelina Arborea", "sim": 0.9332, "note": "cross-collection", "img": "pair_026_P2R_3365_vs_P2G_3456.jpg", "qcol_short": "P2R", "ncol_short": "P2G"}, {"idx": 27, "qcol": "phase1_rifi", "qfld": "3266.Autranella congolensis", "qid": "3266", "qname": "Autranella Congolensis", "ncol": "phase2_ghana", "nfld": "3477.Tieghemella heckelii", "nid": "3477", "nname": "Tieghemella Heckelii", "sim": 0.9325, "note": "cross-collection", "img": "pair_027_P1R_3266_vs_P2G_3477.jpg", "qcol_short": "P1R", "ncol_short": "P2G"}, {"idx": 28, "qcol": "phase2_ghana", "qfld": "3476.Terminalia ivorensis", "qid": "3476", "qname": "Terminalia Ivorensis", "ncol": "phase2_rifi", "nfld": "3399.Peronema canescens", "nid": "3399", "nname": "Peronema Canescens", "sim": 0.9322, "note": "cross-collection", "img": "pair_028_P2G_3476_vs_P2R_3399.jpg", "qcol_short": "P2G", "ncol_short": "P2R"}, {"idx": 29, "qcol": "phase2_ghana", "qfld": "3454.Entandrophragma anolens", "qid": "3454", "qname": "Entandrophragma Anolens", "ncol": "phase2_rifi", "nfld": "3388.Cinnamomum glaucescens", "nid": "3388", "nname": "Cinnamomum Glaucescens", "sim": 0.93, "note": "cross-collection", "img": "pair_029_P2G_3454_vs_P2R_3388.jpg", "qcol_short": "P2G", "ncol_short": "P2R"}, {"idx": 30, "qcol": "phase1_tlu", "qfld": "3240", "qid": "3240", "qname": "Hevea Brasiliensis", "ncol": "phase2_ghana", "nfld": "3484.Discoglypremna caloneura", "nid": "3484", "nname": "Discoglypremna Caloneura", "sim": 0.9295, "note": "cross-collection", "img": "pair_030_P1T_3240_vs_P2G_3484.jpg", "qcol_short": "P1T", "ncol_short": "P2G"}, {"idx": 31, "qcol": "phase1_rifi", "qfld": "3329.Khaya senegalensis", "qid": "3329", "qname": "Khaya Senegalensis", "ncol": "phase2_ghana", "nfld": "3454.Entandrophragma anolens", "nid": "3454", "nname": "Entandrophragma Anolens", "sim": 0.9293, "note": "cross-collection", "img": "pair_031_P1R_3329_vs_P2G_3454.jpg", "qcol_short": "P1R", "ncol_short": "P2G"}, {"idx": 32, "qcol": "phase2_rifi", "qfld": "3413.Bagassa guiamensis", "qid": "3413", "qname": "Bagassa Guiamensis", "ncol": "phase1_rifi", "nfld": "3253.Guibourtia coleosperma", "nid": "3253", "nname": "Guibourtia Coleosperma", "sim": 0.9291, "note": "cross-collection", "img": "pair_032_P2R_3413_vs_P1R_3253.jpg", "qcol_short": "P2R", "ncol_short": "P1R"}, {"idx": 33, "qcol": "phase2_rifi", "qfld": "3415.Liquidambar styraciflua", "qid": "3415", "qname": "Liquidambar Styraciflua", "ncol": "phase1_rifi", "nfld": "3262.Chrysophyllum sp", "nid": "3262", "nname": "Chrysophyllum Sp", "sim": 0.929, "note": "cross-collection", "img": "pair_033_P2R_3415_vs_P1R_3262.jpg", "qcol_short": "P2R", "ncol_short": "P1R"}, {"idx": 34, "qcol": "phase1_rifi", "qfld": "3255.Myroxylon balsamum", "qid": "3255", "qname": "Myroxylon Balsamum", "ncol": "phase2_rifi", "nfld": "3415.Liquidambar styraciflua", "nid": "3415", "nname": "Liquidambar Styraciflua", "sim": 0.9278, "note": "cross-collection", "img": "pair_034_P1R_3255_vs_P2R_3415.jpg", "qcol_short": "P1R", "ncol_short": "P2R"}, {"idx": 35, "qcol": "phase1_tlu", "qfld": "3330", "qid": "3330", "qname": "Dialium Bipindense", "ncol": "phase2_rifi", "nfld": "3397.Nephelium sp", "nid": "3397", "nname": "Nephelium Sp", "sim": 0.9272, "note": "cross-collection", "img": "pair_035_P1T_3330_vs_P2R_3397.jpg", "qcol_short": "P1T", "ncol_short": "P2R"}, {"idx": 36, "qcol": "phase1_rifi", "qfld": "3285.Albizia lucida (Albizia lucidior)", "qid": "3285", "qname": "Albizia Lucida (Albizia Lucidior)", "ncol": "phase2_rifi", "nfld": "3415.Liquidambar styraciflua", "nid": "3415", "nname": "Liquidambar Styraciflua", "sim": 0.923, "note": "cross-collection", "img": "pair_036_P1R_3285_vs_P2R_3415.jpg", "qcol_short": "P1R", "ncol_short": "P2R"}, {"idx": 37, "qcol": "phase2_rifi", "qfld": "3349.Couratari guianensis", "qid": "3349", "qname": "Couratari Guianensis", "ncol": "phase1_rifi", "nfld": "3242.Piptadeniastrum africanum", "nid": "3242", "nname": "Piptadeniastrum Africanum", "sim": 0.9216, "note": "cross-collection", "img": "pair_037_P2R_3349_vs_P1R_3242.jpg", "qcol_short": "P2R", "ncol_short": "P1R"}, {"idx": 38, "qcol": "phase1_rifi", "qfld": "3240.Hevea brasiliensis", "qid": "3240", "qname": "Hevea Brasiliensis", "ncol": "phase2_ghana", "nfld": "3490.Hevea brasilensis", "nid": "3490", "nname": "Hevea Brasilensis", "sim": 0.9189, "note": "cross-collection", "img": "pair_038_P1R_3240_vs_P2G_3490.jpg", "qcol_short": "P1R", "ncol_short": "P2G"}, {"idx": 39, "qcol": "phase1_rifi", "qfld": "3291.Prunus serotina", "qid": "3291", "qname": "Prunus Serotina", "ncol": "phase2_rifi", "nfld": "3380.Prunus avium", "nid": "3380", "nname": "Prunus Avium", "sim": 0.9183, "note": "cross-collection", "img": "pair_039_P1R_3291_vs_P2R_3380.jpg", "qcol_short": "P1R", "ncol_short": "P2R"}, {"idx": 40, "qcol": "phase1_rifi", "qfld": "3287.Guarea cedrata", "qid": "3287", "qname": "Guarea Cedrata", "ncol": "phase2_rifi", "nfld": "3429.Palaquium maingayi", "nid": "3429", "nname": "Palaquium Maingayi", "sim": 0.9182, "note": "cross-collection", "img": "pair_040_P1R_3287_vs_P2R_3429.jpg", "qcol_short": "P1R", "ncol_short": "P2R"}, {"idx": 41, "qcol": "phase2_rifi", "qfld": "3337.Aglaia cucullata", "qid": "3337", "qname": "Aglaia Cucullata", "ncol": "phase1_rifi", "nfld": "3298.Tarrietia cochinchinensis (Heritiera cochinchinesis)", "nid": "3298", "nname": "Tarrietia Cochinchinensis (Heritiera Cochinchinesis)", "sim": 0.9167, "note": "cross-collection", "img": "pair_041_P2R_3337_vs_P1R_3298.jpg", "qcol_short": "P2R", "ncol_short": "P1R"}, {"idx": 42, "qcol": "phase1_rifi", "qfld": "3267.Diospyros sailetii", "qid": "3267", "qname": "Diospyros Sailetii", "ncol": "phase2_ghana", "nfld": "3463.Mansonia altissima", "nid": "3463", "nname": "Mansonia Altissima", "sim": 0.916, "note": "cross-collection", "img": "pair_042_P1R_3267_vs_P2G_3463.jpg", "qcol_short": "P1R", "ncol_short": "P2G"}, {"idx": 43, "qcol": "phase2_rifi", "qfld": "3370.Zelkova serrata", "qid": "3370", "qname": "Zelkova Serrata", "ncol": "phase1_rifi", "nfld": "3290.Engelhardtia chrysolepis (Engelhardia roxburghiana)", "nid": "3290", "nname": "Engelhardtia Chrysolepis (Engelhardia Roxburghiana)", "sim": 0.915, "note": "cross-collection", "img": "pair_043_P2R_3370_vs_P1R_3290.jpg", "qcol_short": "P2R", "ncol_short": "P1R"}, {"idx": 44, "qcol": "phase2_rifi", "qfld": "3371.Lagerstroemia paniculata", "qid": "3371", "qname": "Lagerstroemia Paniculata", "ncol": "phase1_tlu", "nfld": "3330", "nid": "3330", "nname": "Dialium Bipindense", "sim": 0.9134, "note": "cross-collection", "img": "pair_044_P2R_3371_vs_P1T_3330.jpg", "qcol_short": "P2R", "ncol_short": "P1T"}, {"idx": 45, "qcol": "phase1_rifi", "qfld": "3297.Syzygium hemisphericum (Syzygium chanlos)", "qid": "3297", "qname": "Syzygium Hemisphericum (Syzygium Chanlos)", "ncol": "phase2_ghana", "nfld": "3468.Petersianthus macrocarpus", "nid": "3468", "nname": "Petersianthus Macrocarpus", "sim": 0.912, "note": "cross-collection", "img": "pair_045_P1R_3297_vs_P2G_3468.jpg", "qcol_short": "P1R", "ncol_short": "P2G"}, {"idx": 46, "qcol": "phase2_rifi", "qfld": "3358.Eucalyptus camandulensis", "qid": "3358", "qname": "Eucalyptus Camandulensis", "ncol": "phase1_tlu", "nfld": "3262", "nid": "3262", "nname": "Chrysophyllum Sp", "sim": 0.9093, "note": "cross-collection", "img": "pair_046_P2R_3358_vs_P1T_3262.jpg", "qcol_short": "P2R", "ncol_short": "P1T"}, {"idx": 47, "qcol": "phase1_tlu", "qfld": "trẩu", "qid": "", "qname": "Trẩu", "ncol": "phase2_ghana", "nfld": "3484.Discoglypremna caloneura", "nid": "3484", "nname": "Discoglypremna Caloneura", "sim": 0.9087, "note": "cross-collection", "img": "pair_047_P1T__vs_P2G_3484.jpg", "qcol_short": "P1T", "ncol_short": "P2G"}, {"idx": 48, "qcol": "phase1_rifi", "qfld": "3311.Colophospermum mopane", "qid": "3311", "qname": "Colophospermum Mopane", "ncol": "phase2_rifi", "nfld": "3423.Heritiera littoralis", "nid": "3423", "nname": "Heritiera Littoralis", "sim": 0.9084, "note": "cross-collection", "img": "pair_048_P1R_3311_vs_P2R_3423.jpg", "qcol_short": "P1R", "ncol_short": "P2R"}, {"idx": 49, "qcol": "phase2_rifi", "qfld": "3417.Markhamia stipulata", "qid": "3417", "qname": "Markhamia Stipulata", "ncol": "phase2_ghana", "nfld": "3461.Lannea welwitschii", "nid": "3461", "nname": "Lannea Welwitschii", "sim": 0.9083, "note": "cross-collection", "img": "pair_049_P2R_3417_vs_P2G_3461.jpg", "qcol_short": "P2R", "ncol_short": "P2G"}, {"idx": 50, "qcol": "phase1_rifi", "qfld": "3306.Homalium Foetidum", "qid": "3306", "qname": "Homalium Foetidum", "ncol": "phase2_ghana", "nfld": "3466.Nesogordonia papaverifera", "nid": "3466", "nname": "Nesogordonia Papaverifera", "sim": 0.9077, "note": "cross-collection", "img": "pair_050_P1R_3306_vs_P2G_3466.jpg", "qcol_short": "P1R", "ncol_short": "P2G"}, {"idx": 51, "qcol": "phase1_rifi", "qfld": "3294.Klainedoxa gabonensis", "qid": "3294", "qname": "Klainedoxa Gabonensis", "ncol": "phase2_ghana", "nfld": "3473.Sterculia rhinopetala", "nid": "3473", "nname": "Sterculia Rhinopetala", "sim": 0.9074, "note": "cross-collection", "img": "pair_051_P1R_3294_vs_P2G_3473.jpg", "qcol_short": "P1R", "ncol_short": "P2G"}, {"idx": 52, "qcol": "phase2_rifi", "qfld": "3416.Vernicia montana", "qid": "3416", "qname": "Vernicia Montana", "ncol": "phase1_tlu", "nfld": "trẩu", "nid": "", "nname": "Trẩu", "sim": 0.9067, "note": "cross-collection", "img": "pair_052_P2R_3416_vs_P1T_.jpg", "qcol_short": "P2R", "ncol_short": "P1T"}, {"idx": 53, "qcol": "phase2_rifi", "qfld": "3431.Manilkara kanosiensis", "qid": "3431", "qname": "Manilkara Kanosiensis", "ncol": "phase1_rifi", "nfld": "3294.Klainedoxa gabonensis", "nid": "3294", "nname": "Klainedoxa Gabonensis", "sim": 0.9062, "note": "cross-collection", "img": "pair_053_P2R_3431_vs_P1R_3294.jpg", "qcol_short": "P2R", "ncol_short": "P1R"}, {"idx": 54, "qcol": "phase2_rifi", "qfld": "3372.Lagerstroemia tomentosa", "qid": "3372", "qname": "Lagerstroemia Tomentosa", "ncol": "phase1_rifi", "nfld": "3302.Hopea pierrei", "nid": "3302", "nname": "Hopea Pierrei", "sim": 0.9057, "note": "cross-collection", "img": "pair_054_P2R_3372_vs_P1R_3302.jpg", "qcol_short": "P2R", "ncol_short": "P1R"}, {"idx": 55, "qcol": "phase2_rifi", "qfld": "3347.Careya sphaerica", "qid": "3347", "qname": "Careya Sphaerica", "ncol": "phase1_tlu", "nfld": "3265", "nid": "3265", "nname": "Distemonanthus Benthamianus", "sim": 0.9055, "note": "cross-collection", "img": "pair_055_P2R_3347_vs_P1T_3265.jpg", "qcol_short": "P2R", "ncol_short": "P1T"}, {"idx": 56, "qcol": "phase1_rifi", "qfld": "3244.Calocedrus sp", "qid": "3244", "qname": "Calocedrus Sp", "ncol": "phase2_rifi", "nfld": "3384.Pinus krempfii", "nid": "3384", "nname": "Pinus Krempfii", "sim": 0.9037, "note": "cross-collection", "img": "pair_056_P1R_3244_vs_P2R_3384.jpg", "qcol_short": "P1R", "ncol_short": "P2R"}, {"idx": 57, "qcol": "phase1_tlu", "qfld": "3271", "qid": "3271", "qname": "Pterocarpus Soyauxii", "ncol": "phase2_rifi", "nfld": "3412.Platymiscium trinitatis", "nid": "3412", "nname": "Platymiscium Trinitatis", "sim": 0.9036, "note": "cross-collection", "img": "pair_057_P1T_3271_vs_P2R_3412.jpg", "qcol_short": "P1T", "ncol_short": "P2R"}, {"idx": 58, "qcol": "phase1_rifi", "qfld": "3314.Cupressus funebris (Cupressus pendula)", "qid": "3314", "qname": "Cupressus Funebris (Cupressus Pendula)", "ncol": "phase2_rifi", "nfld": "3393.Pinus dalatensis", "nid": "3393", "nname": "Pinus Dalatensis", "sim": 0.9019, "note": "cross-collection", "img": "pair_058_P1R_3314_vs_P2R_3393.jpg", "qcol_short": "P1R", "ncol_short": "P2R"}, {"idx": 59, "qcol": "phase2_rifi", "qfld": "3344.Bombax ceiba", "qid": "3344", "qname": "Bombax Ceiba", "ncol": "phase1_rifi", "nfld": "3260.Milicia regia", "nid": "3260", "nname": "Milicia Regia", "sim": 0.9006, "note": "cross-collection", "img": "pair_059_P2R_3344_vs_P1R_3260.jpg", "qcol_short": "P2R", "ncol_short": "P1R"}, {"idx": 60, "qcol": "phase2_ghana", "qfld": "3455.Funtumia africana", "qid": "3455", "qname": "Funtumia Africana", "ncol": "phase2_ghana", "nfld": "3485.Funtumia elastica", "nid": "3485", "nname": "Funtumia Elastica", "sim": 0.9887, "note": "same-collection", "img": "pair_060_P2G_3455_vs_P2G_3485.jpg", "qcol_short": "P2G", "ncol_short": "P2G"}, {"idx": 61, "qcol": "phase2_rifi", "qfld": "3334.Albizia chinensis", "qid": "3334", "qname": "Albizia Chinensis", "ncol": "phase2_rifi", "nfld": "3424.Intsia palembanica", "nid": "3424", "nname": "Intsia Palembanica", "sim": 0.981, "note": "same-collection", "img": "pair_061_P2R_3334_vs_P2R_3424.jpg", "qcol_short": "P2R", "ncol_short": "P2R"}, {"idx": 62, "qcol": "phase1_tlu", "qfld": "3238", "qid": "3238", "qname": "Xylia Xylocarpa", "ncol": "phase1_tlu", "nfld": "3246", "nid": "3246", "nname": "Berlinia Bracteosa", "sim": 0.9775, "note": "same-collection", "img": "pair_062_P1T_3238_vs_P1T_3246.jpg", "qcol_short": "P1T", "ncol_short": "P1T"}, {"idx": 63, "qcol": "phase2_ghana", "qfld": "3442.Berlinia tomentella", "qid": "3442", "qname": "Berlinia Tomentella", "ncol": "phase2_ghana", "nfld": "3448.Anthonotha fragrans", "nid": "3448", "nname": "Anthonotha Fragrans", "sim": 0.9752, "note": "same-collection", "img": "pair_063_P2G_3442_vs_P2G_3448.jpg", "qcol_short": "P2G", "ncol_short": "P2G"}, {"idx": 64, "qcol": "phase1_tlu", "qfld": "3248", "qid": "3248", "qname": "Afzelia Africana", "ncol": "phase1_tlu", "nfld": "3250", "nid": "3250", "nname": "Afzelia Quanzensis", "sim": 0.9748, "note": "same-collection", "img": "pair_064_P1T_3248_vs_P1T_3250.jpg", "qcol_short": "P1T", "ncol_short": "P1T"}, {"idx": 65, "qcol": "phase2_rifi", "qfld": "3356.Dipterocarpus retusus", "qid": "3356", "qname": "Dipterocarpus Retusus", "ncol": "phase2_rifi", "nfld": "3404.Dryobalanops sp", "nid": "3404", "nname": "Dryobalanops Sp", "sim": 0.9726, "note": "same-collection", "img": "pair_065_P2R_3356_vs_P2R_3404.jpg", "qcol_short": "P2R", "ncol_short": "P2R"}, {"idx": 66, "qcol": "phase2_rifi", "qfld": "3401.Shorea sp", "qid": "3401", "qname": "Shorea Sp", "ncol": "phase2_rifi", "nfld": "3356.Dipterocarpus retusus", "nid": "3356", "nname": "Dipterocarpus Retusus", "sim": 0.9716, "note": "same-collection", "img": "pair_066_P2R_3401_vs_P2R_3356.jpg", "qcol_short": "P2R", "ncol_short": "P2R"}, {"idx": 67, "qcol": "phase2_ghana", "qfld": "3459.Khaya grandifoliola", "qid": "3459", "qname": "Khaya Grandifoliola", "ncol": "phase2_ghana", "nfld": "3460.Khaya ivorensis", "nid": "3460", "nname": "Khaya Ivorensis", "sim": 0.9706, "note": "same-collection", "img": "pair_067_P2G_3459_vs_P2G_3460.jpg", "qcol_short": "P2G", "ncol_short": "P2G"}, {"idx": 68, "qcol": "phase2_ghana", "qfld": "3433.Albizia adianthifolia", "qid": "3433", "qname": "Albizia Adianthifolia", "ncol": "phase2_ghana", "nfld": "3436.Albizia zyia", "nid": "3436", "nname": "Albizia Zyia", "sim": 0.9701, "note": "same-collection", "img": "pair_068_P2G_3433_vs_P2G_3436.jpg", "qcol_short": "P2G", "ncol_short": "P2G"}, {"idx": 69, "qcol": "phase1_tlu", "qfld": "3236", "qid": "3236", "qname": "Pachyelasma Tessmannii", "ncol": "phase1_tlu", "nfld": "3303", "nid": "3303", "nname": "Terminalia Superba", "sim": 0.9687, "note": "same-collection", "img": "pair_069_P1T_3236_vs_P1T_3303.jpg", "qcol_short": "P1T", "ncol_short": "P1T"}, {"idx": 70, "qcol": "phase2_rifi", "qfld": "3361.Eucalyptus sp", "qid": "3361", "qname": "Eucalyptus Sp", "ncol": "phase2_rifi", "nfld": "3392.Aucoumea klaineana", "nid": "3392", "nname": "Aucoumea Klaineana", "sim": 0.9686, "note": "same-collection", "img": "pair_070_P2R_3361_vs_P2R_3392.jpg", "qcol_short": "P2R", "ncol_short": "P2R"}, {"idx": 71, "qcol": "phase1_tlu", "qfld": "3258", "qid": "3258", "qname": "Tetraberlinia Bifoliolata", "ncol": "phase1_tlu", "nfld": "3304", "nid": "3304", "nname": "Gilbertiodendron Dewevrei", "sim": 0.968, "note": "same-collection", "img": "pair_071_P1T_3258_vs_P1T_3304.jpg", "qcol_short": "P1T", "ncol_short": "P1T"}, {"idx": 72, "qcol": "phase2_rifi", "qfld": "3419.Quercus Stellata", "qid": "3419", "qname": "Quercus Stellata", "ncol": "phase2_rifi", "nfld": "3420.Quercus Pyrenaica", "nid": "3420", "nname": "Quercus Pyrenaica", "sim": 0.9676, "note": "same-collection", "img": "pair_072_P2R_3419_vs_P2R_3420.jpg", "qcol_short": "P2R", "ncol_short": "P2R"}, {"idx": 73, "qcol": "phase2_rifi", "qfld": "3386.Podocarpus pilgeri", "qid": "3386", "qname": "Podocarpus Pilgeri", "ncol": "phase2_rifi", "nfld": "3391.Taxus wallichiana", "nid": "3391", "nname": "Taxus Wallichiana", "sim": 0.9672, "note": "same-collection", "img": "pair_073_P2R_3386_vs_P2R_3391.jpg", "qcol_short": "P2R", "ncol_short": "P2R"}, {"idx": 74, "qcol": "phase2_ghana", "qfld": "3434.Albizia ferruginea", "qid": "3434", "qname": "Albizia Ferruginea", "ncol": "phase2_ghana", "nfld": "3436.Albizia zyia", "nid": "3436", "nname": "Albizia Zyia", "sim": 0.9671, "note": "same-collection", "img": "pair_074_P2G_3434_vs_P2G_3436.jpg", "qcol_short": "P2G", "ncol_short": "P2G"}, {"idx": 75, "qcol": "phase2_ghana", "qfld": "3439.Aningeria altissima", "qid": "3439", "qname": "Aningeria Altissima", "ncol": "phase2_ghana", "nfld": "3487.Aningeria robusta", "nid": "3487", "nname": "Aningeria Robusta", "sim": 0.9663, "note": "same-collection", "img": "pair_075_P2G_3439_vs_P2G_3487.jpg", "qcol_short": "P2G", "ncol_short": "P2G"}, {"idx": 76, "qcol": "phase1_rifi", "qfld": "3256.Pterocarpus macrocarpus", "qid": "3256", "qname": "Pterocarpus Macrocarpus", "ncol": "phase1_rifi", "nfld": "3257.Didelotia africana", "nid": "3257", "nname": "Didelotia Africana", "sim": 0.9661, "note": "same-collection", "img": "pair_076_P1R_3256_vs_P1R_3257.jpg", "qcol_short": "P1R", "ncol_short": "P1R"}, {"idx": 77, "qcol": "phase2_rifi", "qfld": "3331.Cinnamomum balansae", "qid": "3331", "qname": "Cinnamomum Balansae", "ncol": "phase2_rifi", "nfld": "3388.Cinnamomum glaucescens", "nid": "3388", "nname": "Cinnamomum Glaucescens", "sim": 0.9655, "note": "same-collection", "img": "pair_077_P2R_3331_vs_P2R_3388.jpg", "qcol_short": "P2R", "ncol_short": "P2R"}, {"idx": 78, "qcol": "phase1_tlu", "qfld": "3276", "qid": "3276", "qname": "Entandrophragma Utile", "ncol": "phase1_tlu", "nfld": "3307", "nid": "3307", "nname": "Samanea Saman", "sim": 0.965, "note": "same-collection", "img": "pair_078_P1T_3276_vs_P1T_3307.jpg", "qcol_short": "P1T", "ncol_short": "P1T"}, {"idx": 79, "qcol": "phase1_tlu", "qfld": "3319", "qid": "3319", "qname": "Homalium Caryophyllaceum", "ncol": "phase1_tlu", "nfld": "Sao xanh", "nid": "", "nname": "Sao Xanh", "sim": 0.965, "note": "same-collection", "img": "pair_079_P1T_3319_vs_P1T_.jpg", "qcol_short": "P1T", "ncol_short": "P1T"}, {"idx": 80, "qcol": "phase2_rifi", "qfld": "3351.Araucaria araucana", "qid": "3351", "qname": "Araucaria Araucana", "ncol": "phase2_rifi", "nfld": "3379.Pinus radiata", "nid": "3379", "nname": "Pinus Radiata", "sim": 0.9646, "note": "same-collection", "img": "pair_080_P2R_3351_vs_P2R_3379.jpg", "qcol_short": "P2R", "ncol_short": "P2R"}, {"idx": 81, "qcol": "phase1_tlu", "qfld": "3235", "qid": "3235", "qname": "Nauclea Diderrichii", "ncol": "phase1_tlu", "nfld": "3258", "nid": "3258", "nname": "Tetraberlinia Bifoliolata", "sim": 0.9644, "note": "same-collection", "img": "pair_081_P1T_3235_vs_P1T_3258.jpg", "qcol_short": "P1T", "ncol_short": "P1T"}, {"idx": 82, "qcol": "phase2_rifi", "qfld": "3341.Xanthocyparis vietnamensis", "qid": "3341", "qname": "Xanthocyparis Vietnamensis", "ncol": "phase2_rifi", "nfld": "3391.Taxus wallichiana", "nid": "3391", "nname": "Taxus Wallichiana", "sim": 0.9638, "note": "same-collection", "img": "pair_082_P2R_3341_vs_P2R_3391.jpg", "qcol_short": "P2R", "ncol_short": "P2R"}, {"idx": 83, "qcol": "phase2_ghana", "qfld": "3445.Celtis mildbraedii", "qid": "3445", "qname": "Celtis Mildbraedii", "ncol": "phase2_ghana", "nfld": "3446.Celtis zenkeri", "nid": "3446", "nname": "Celtis Zenkeri", "sim": 0.9628, "note": "same-collection", "img": "pair_083_P2G_3445_vs_P2G_3446.jpg", "qcol_short": "P2G", "ncol_short": "P2G"}, {"idx": 84, "qcol": "phase2_rifi", "qfld": "3355.Dipterocarpus costatus", "qid": "3355", "qname": "Dipterocarpus Costatus", "ncol": "phase2_rifi", "nfld": "3356.Dipterocarpus retusus", "nid": "3356", "nname": "Dipterocarpus Retusus", "sim": 0.9621, "note": "same-collection", "img": "pair_084_P2R_3355_vs_P2R_3356.jpg", "qcol_short": "P2R", "ncol_short": "P2R"}, {"idx": 85, "qcol": "phase2_ghana", "qfld": "3469.Pterygota macrocarpa", "qid": "3469", "qname": "Pterygota Macrocarpa", "ncol": "phase2_ghana", "nfld": "3472.Sterculia oblonga", "nid": "3472", "nname": "Sterculia Oblonga", "sim": 0.962, "note": "same-collection", "img": "pair_085_P2G_3469_vs_P2G_3472.jpg", "qcol_short": "P2G", "ncol_short": "P2G"}, {"idx": 86, "qcol": "phase2_ghana", "qfld": "3486.Gilbertiodendron limba", "qid": "3486", "qname": "Gilbertiodendron Limba", "ncol": "phase2_ghana", "nfld": "3448.Anthonotha fragrans", "nid": "3448", "nname": "Anthonotha Fragrans", "sim": 0.9612, "note": "same-collection", "img": "pair_086_P2G_3486_vs_P2G_3448.jpg", "qcol_short": "P2G", "ncol_short": "P2G"}, {"idx": 87, "qcol": "phase2_ghana", "qfld": "3432.Afzelia bella", "qid": "3432", "qname": "Afzelia Bella", "ncol": "phase2_ghana", "nfld": "3442.Berlinia tomentella", "nid": "3442", "nname": "Berlinia Tomentella", "sim": 0.9591, "note": "same-collection", "img": "pair_087_P2G_3432_vs_P2G_3442.jpg", "qcol_short": "P2G", "ncol_short": "P2G"}, {"idx": 88, "qcol": "phase2_rifi", "qfld": "3384.Pinus krempfii", "qid": "3384", "qname": "Pinus Krempfii", "ncol": "phase2_rifi", "nfld": "3393.Pinus dalatensis", "nid": "3393", "nname": "Pinus Dalatensis", "sim": 0.9591, "note": "same-collection", "img": "pair_088_P2R_3384_vs_P2R_3393.jpg", "qcol_short": "P2R", "ncol_short": "P2R"}, {"idx": 89, "qcol": "phase2_ghana", "qfld": "3437.Alstonia boonei", "qid": "3437", "qname": "Alstonia Boonei", "ncol": "phase2_ghana", "nfld": "3444.Celtis adolfi-friderici", "nid": "3444", "nname": "Celtis Adolfi-Friderici", "sim": 0.958, "note": "same-collection", "img": "pair_089_P2G_3437_vs_P2G_3444.jpg", "qcol_short": "P2G", "ncol_short": "P2G"}, {"idx": 90, "qcol": "phase1_tlu", "qfld": "3245", "qid": "3245", "qname": "Magnolia Hypolampra", "ncol": "phase1_tlu", "nfld": "3265", "nid": "3265", "nname": "Distemonanthus Benthamianus", "sim": 0.9568, "note": "same-collection", "img": "pair_090_P1T_3245_vs_P1T_3265.jpg", "qcol_short": "P1T", "ncol_short": "P1T"}, {"idx": 91, "qcol": "phase2_ghana", "qfld": "3440.Antianis toxicaria", "qid": "3440", "qname": "Antianis Toxicaria", "ncol": "phase2_ghana", "nfld": "3444.Celtis adolfi-friderici", "nid": "3444", "nname": "Celtis Adolfi-Friderici", "sim": 0.9567, "note": "same-collection", "img": "pair_091_P2G_3440_vs_P2G_3444.jpg", "qcol_short": "P2G", "ncol_short": "P2G"}, {"idx": 92, "qcol": "phase1_tlu", "qfld": "3247", "qid": "3247", "qname": "Toona Sureni", "ncol": "phase1_tlu", "nfld": "3276", "nid": "3276", "nname": "Entandrophragma Utile", "sim": 0.9562, "note": "same-collection", "img": "pair_092_P1T_3247_vs_P1T_3276.jpg", "qcol_short": "P1T", "ncol_short": "P1T"}, {"idx": 93, "qcol": "phase2_ghana", "qfld": "3451.Daniellia oliveri", "qid": "3451", "qname": "Daniellia Oliveri", "ncol": "phase2_ghana", "nfld": "3434.Albizia ferruginea", "nid": "3434", "nname": "Albizia Ferruginea", "sim": 0.9557, "note": "same-collection", "img": "pair_093_P2G_3451_vs_P2G_3434.jpg", "qcol_short": "P2G", "ncol_short": "P2G"}, {"idx": 94, "qcol": "phase1_rifi", "qfld": "3254.Pterocarpus sp", "qid": "3254", "qname": "Pterocarpus Sp", "ncol": "phase1_rifi", "nfld": "3256.Pterocarpus macrocarpus", "nid": "3256", "nname": "Pterocarpus Macrocarpus", "sim": 0.9555, "note": "same-collection", "img": "pair_094_P1R_3254_vs_P1R_3256.jpg", "qcol_short": "P1R", "ncol_short": "P1R"}, {"idx": 95, "qcol": "phase2_rifi", "qfld": "3390.Quercus alba", "qid": "3390", "qname": "Quercus Alba", "ncol": "phase2_rifi", "nfld": "3420.Quercus Pyrenaica", "nid": "3420", "nname": "Quercus Pyrenaica", "sim": 0.9553, "note": "same-collection", "img": "pair_095_P2R_3390_vs_P2R_3420.jpg", "qcol_short": "P2R", "ncol_short": "P2R"}, {"idx": 96, "qcol": "phase1_tlu", "qfld": "3256", "qid": "3256", "qname": "Pterocarpus Macrocarpus", "ncol": "phase1_tlu", "nfld": "3257", "nid": "3257", "nname": "Didelotia Africana", "sim": 0.9547, "note": "same-collection", "img": "pair_096_P1T_3256_vs_P1T_3257.jpg", "qcol_short": "P1T", "ncol_short": "P1T"}, {"idx": 97, "qcol": "phase2_rifi", "qfld": "3394.Anisoptera laevis", "qid": "3394", "qname": "Anisoptera Laevis", "ncol": "phase2_rifi", "nfld": "3404.Dryobalanops sp", "nid": "3404", "nname": "Dryobalanops Sp", "sim": 0.9541, "note": "same-collection", "img": "pair_097_P2R_3394_vs_P2R_3404.jpg", "qcol_short": "P2R", "ncol_short": "P2R"}, {"idx": 98, "qcol": "phase1_rifi", "qfld": "3301.Acacia melanoxylon", "qid": "3301", "qname": "Acacia Melanoxylon", "ncol": "phase1_rifi", "nfld": "3307.Samanea saman", "nid": "3307", "nname": "Samanea Saman", "sim": 0.954, "note": "same-collection", "img": "pair_098_P1R_3301_vs_P1R_3307.jpg", "qcol_short": "P1R", "ncol_short": "P1R"}, {"idx": 99, "qcol": "phase1_tlu", "qfld": "3317", "qid": "3317", "qname": "Anisoptera Costata (Anisoptera Robusta)", "ncol": "phase1_tlu", "nfld": "3319", "nid": "3319", "nname": "Homalium Caryophyllaceum", "sim": 0.9538, "note": "same-collection", "img": "pair_099_P1T_3317_vs_P1T_3319.jpg", "qcol_short": "P1T", "ncol_short": "P1T"}, {"idx": 100, "qcol": "phase1_tlu", "qfld": "3243", "qid": "3243", "qname": "Lithocarpus Ducampii", "ncol": "phase1_tlu", "nfld": "3322", "nid": "3322", "nname": "Quercus Petraea", "sim": 0.9537, "note": "same-collection", "img": "pair_100_P1T_3243_vs_P1T_3322.jpg", "qcol_short": "P1T", "ncol_short": "P1T"}, {"idx": 101, "qcol": "phase1_rifi", "qfld": "3252.Callitris columellaris", "qid": "3252", "qname": "Callitris Columellaris", "ncol": "phase1_rifi", "nfld": "3274.Cunninghamia lanceolata", "nid": "3274", "nname": "Cunninghamia Lanceolata", "sim": 0.9533, "note": "same-collection", "img": "pair_101_P1R_3252_vs_P1R_3274.jpg", "qcol_short": "P1R", "ncol_short": "P1R"}, {"idx": 102, "qcol": "phase1_tlu", "qfld": "3292", "qid": "3292", "qname": "Brachystegia Sp", "ncol": "phase1_tlu", "nfld": "3304", "nid": "3304", "nname": "Gilbertiodendron Dewevrei", "sim": 0.9524, "note": "same-collection", "img": "pair_102_P1T_3292_vs_P1T_3304.jpg", "qcol_short": "P1T", "ncol_short": "P1T"}, {"idx": 103, "qcol": "phase2_ghana", "qfld": "3467.Parkia bicolar", "qid": "3467", "qname": "Parkia Bicolar", "ncol": "phase2_ghana", "nfld": "3444.Celtis adolfi-friderici", "nid": "3444", "nname": "Celtis Adolfi-Friderici", "sim": 0.9523, "note": "same-collection", "img": "pair_103_P2G_3467_vs_P2G_3444.jpg", "qcol_short": "P2G", "ncol_short": "P2G"}, {"idx": 104, "qcol": "phase2_rifi", "qfld": "3335.Buchenavia capitana", "qid": "3335", "qname": "Buchenavia Capitana", "ncol": "phase2_rifi", "nfld": "3345.Caesalpinia paraguariensis", "nid": "3345", "nname": "Caesalpinia Paraguariensis", "sim": 0.9523, "note": "same-collection", "img": "pair_104_P2R_3335_vs_P2R_3345.jpg", "qcol_short": "P2R", "ncol_short": "P2R"}, {"idx": 105, "qcol": "phase2_ghana", "qfld": "3435.Albizia glaberrima", "qid": "3435", "qname": "Albizia Glaberrima", "ncol": "phase2_ghana", "nfld": "3450.Daniellia ogea", "nid": "3450", "nname": "Daniellia Ogea", "sim": 0.9516, "note": "same-collection", "img": "pair_105_P2G_3435_vs_P2G_3450.jpg", "qcol_short": "P2G", "ncol_short": "P2G"}, {"idx": 106, "qcol": "phase1_rifi", "qfld": "3317.Anisoptera costata (Anisoptera Robusta)", "qid": "3317", "qname": "Anisoptera Costata (Anisoptera Robusta)", "ncol": "phase1_rifi", "nfld": "3319.Homalium caryophyllaceum", "nid": "3319", "nname": "Homalium Caryophyllaceum", "sim": 0.9515, "note": "same-collection", "img": "pair_106_P1R_3317_vs_P1R_3319.jpg", "qcol_short": "P1R", "ncol_short": "P1R"}, {"idx": 107, "qcol": "phase1_rifi", "qfld": "3248.Afzelia africana", "qid": "3248", "qname": "Afzelia Africana", "ncol": "phase1_rifi", "nfld": "3250.Afzelia quanzensis", "nid": "3250", "nname": "Afzelia Quanzensis", "sim": 0.9512, "note": "same-collection", "img": "pair_107_P1R_3248_vs_P1R_3250.jpg", "qcol_short": "P1R", "ncol_short": "P1R"}, {"idx": 108, "qcol": "phase2_rifi", "qfld": "3338.Dicorynia guianensis", "qid": "3338", "qname": "Dicorynia Guianensis", "ncol": "phase2_rifi", "nfld": "3424.Intsia palembanica", "nid": "3424", "nname": "Intsia Palembanica", "sim": 0.9509, "note": "same-collection", "img": "pair_108_P2R_3338_vs_P2R_3424.jpg", "qcol_short": "P2R", "ncol_short": "P2R"}, {"idx": 109, "qcol": "phase2_rifi", "qfld": "3364.Chamaecyparis obtusa", "qid": "3364", "qname": "Chamaecyparis Obtusa", "ncol": "phase2_rifi", "nfld": "3378.Picea glauca", "nid": "3378", "nname": "Picea Glauca", "sim": 0.9503, "note": "same-collection", "img": "pair_109_P2R_3364_vs_P2R_3378.jpg", "qcol_short": "P2R", "ncol_short": "P2R"}];
+const STORAGE_KEY = 'vn260_review_v2';
+const VERDICTS = [
+  {val:'ok',    icon:'✅', label:'Correct — khác loài, similarity tự nhiên'},
+  {val:'swap',  icon:'🔄', label:'SWAP — có thể đặt nhầm tên nhau'},
+  {val:'same',  icon:'⚠️', label:'SAME SPECIES — nên merge lại'},
+  {val:'unsure',icon:'❓', label:'Unsure — cần kiểm tra mẫu vật thực'},
+];
+
+let currentPage = 1;
+let perPage = 10;
+let currentFilter = 'all';
+let filteredPairs = [...PAIRS];
+
+/* ── localStorage ── */
+function loadData() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) { return {}; }
+}
+function saveEntry(idx, verdict, note) {
+  const d = loadData();
+  d[idx] = {verdict, note, ts: new Date().toISOString()};
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
+}
+
+/* ── Filtering ── */
+function applyFilter() {
+  const d = loadData();
+  if (currentFilter === 'all') {
+    filteredPairs = [...PAIRS];
+  } else if (currentFilter === 'unreviewed') {
+    filteredPairs = PAIRS.filter(p => !d[p.idx]?.verdict);
+  } else {
+    filteredPairs = PAIRS.filter(p => d[p.idx]?.verdict === currentFilter);
+  }
+  currentPage = 1;
+  render();
+}
+function setFilter(btn) {
+  document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('act'));
+  btn.classList.add('act');
+  currentFilter = btn.dataset.filter;
+  applyFilter();
+}
+function setPerPage(n) { perPage = n; currentPage = 1; render(); }
+
+/* ── Pagination ── */
+function totalPages() { return Math.max(1, Math.ceil(filteredPairs.length / perPage)); }
+function pageSlice() {
+  const s = (currentPage-1)*perPage;
+  return filteredPairs.slice(s, s+perPage);
+}
+function goPage(p) {
+  const tp = totalPages();
+  if (p < 1 || p > tp) return;
+  // flush edits of current page before navigating
+  flushCurrentPage();
+  currentPage = p;
+  render();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+/* flush textarea/radio values from DOM into localStorage before page swap */
+function flushCurrentPage() {
+  document.querySelectorAll('.card[data-idx]').forEach(card => {
+    const idx = +card.dataset.idx;
+    const radio = card.querySelector('input[type=radio]:checked');
+    const ta    = card.querySelector('textarea');
+    if (radio || (ta && ta.value)) {
+      saveEntry(idx, radio?.value || '', ta?.value || '');
+    }
+  });
+}
+
+/* ── Render ── */
+function render() {
+  const area = document.getElementById('render-area');
+  const d = loadData();
+  const slice = pageSlice();
+  const tp = totalPages();
+
+  if (slice.length === 0) {
+    area.innerHTML = '<div class="empty">Không có cặp nào phù hợp với filter.</div>';
+    updateProgress(d);
+    return;
+  }
+
+  // Group slice into cross / same sections
+  const cross = slice.filter(p => p.note === 'cross-collection');
+  const same  = slice.filter(p => p.note === 'same-collection');
+
+  let html = pagerHTML(tp, 'top');
+
+  if (cross.length) {
+    html += `<div class="section-head">🔴 Cross-Collection <span class="section-badge">(${cross.length} pairs on this page)</span></div>`;
+    cross.forEach(p => { html += cardHTML(p, d[p.idx]); });
+  }
+  if (same.length) {
+    html += `<div class="section-head">🟠 Same-Collection <span class="section-badge">(${same.length} pairs on this page)</span></div>`;
+    same.forEach(p => { html += cardHTML(p, d[p.idx]); });
+  }
+
+  html += pagerHTML(tp, 'bot');
+  area.innerHTML = html;
+  updateProgress(d);
+}
+
+function pagerHTML(tp, key) {
+  if (tp <= 1) return '';
+  const cur = currentPage;
+  let btns = '';
+  btns += `<button class="page-btn" onclick="goPage(${cur-1})" ${cur===1?'disabled':''}>‹ Prev</button>`;
+
+  // Show up to 7 page buttons
+  let start = Math.max(1, cur-3), end = Math.min(tp, start+6);
+  start = Math.max(1, end-6);
+  if (start > 1) btns += `<button class="page-btn" onclick="goPage(1)">1</button><span class="page-info">…</span>`;
+  for (let p=start; p<=end; p++) {
+    btns += `<button class="page-btn ${p===cur?'current':''}" onclick="goPage(${p})">${p}</button>`;
+  }
+  if (end < tp) btns += `<span class="page-info">…</span><button class="page-btn" onclick="goPage(${tp})">${tp}</button>`;
+
+  btns += `<button class="page-btn" onclick="goPage(${cur+1})" ${cur===tp?'disabled':''}>Next ›</button>`;
+  btns += `<span class="page-info">Trang ${cur}/${tp} — ${filteredPairs.length} pairs</span>`;
+  return `<div class="pager pager-${key}">${btns}</div>`;
+}
+
+function simBadge(sim) {
+  const cls = sim>=0.97 ? 'bg-red' : sim>=0.95 ? 'bg-orange' : 'bg-blue';
+  return `<span class="badge ${cls}">${sim.toFixed(4)}</span>`;
+}
+
+function cardHTML(p, entry) {
+  const verdict = entry?.verdict || '';
+  const note    = entry?.note    || '';
+  const border  = p.note==='cross-collection' ? 'cross' : 'same';
+  const typeBadge = p.note==='cross-collection'
+    ? '<span class="badge bg-red">CROSS-COLLECTION</span>'
+    : '<span class="badge bg-orange">SAME-COLLECTION</span>';
+  const savedInd = verdict ? `<span class="saved-ind">${VERDICTS.find(v=>v.val===verdict)?.icon || ''} saved</span>` : '';
+
+  const verdictOpts = VERDICTS.map(v => {
+    const chk = verdict===v.val ? 'checked' : '';
+    return `<label class="vopt"><input type="radio" name="vv${p.idx}" value="${v.val}" ${chk} onchange="onVerdict(${p.idx})"> ${v.icon} ${v.label}</label>`;
+  }).join('');
+
+  return `
+<div class="card ${border}" id="card${p.idx}" data-idx="${p.idx}">
+  <div class="card-hdr">
+    <span class="pnum">#${String(p.idx).padStart(3,'0')}</span>
+    ${typeBadge} ${simBadge(p.sim)}
+    <span class="sp-label">
+      <b>[${p.qcol_short}]</b> ${p.qid} · ${p.qname.substring(0,32)}
+      &nbsp;↔&nbsp;
+      <b>[${p.ncol_short}]</b> ${p.nid} · ${p.nname.substring(0,32)}
+    </span>
+    <span class="saved-ind" id="si${p.idx}">${savedInd}</span>
+  </div>
+  <div class="card-body">
+    <div class="img-wrap">
+      <img class="pair-img" src="${p.img}" loading="lazy" alt="pair ${p.idx}">
+    </div>
+    <div class="meta">
+      <table class="meta-table">
+        <tr><td>Query folder</td><td><code>${p.qfld}</code></td></tr>
+        <tr><td>Nearest folder</td><td><code>${p.nfld}</code></td></tr>
+        <tr><td>Collection</td><td>${p.qcol_short} → ${p.ncol_short}</td></tr>
+        <tr><td>Similarity</td><td><b>${p.sim.toFixed(4)}</b></td></tr>
+      </table>
+      <div class="verdict-box">
+        <div class="verdict-title">Verdict:</div>
+        ${verdictOpts}
+        <textarea id="ta${p.idx}" rows="2" oninput="onNote(${p.idx})" placeholder="Ghi chú...">${note}</textarea>
+      </div>
+    </div>
+  </div>
+</div>`;
+}
+
+function onVerdict(idx) {
+  const radio = document.querySelector(`input[name="vv${idx}"]:checked`);
+  const ta    = document.getElementById(`ta${idx}`);
+  saveEntry(idx, radio?.value||'', ta?.value||'');
+  const v = VERDICTS.find(v=>v.val===radio?.value);
+  const si = document.getElementById(`si${idx}`);
+  if (si) si.innerHTML = v ? `<span class="saved-ind">${v.icon} saved</span>` : '';
+  updateProgress(loadData());
+  if (currentFilter !== 'all') setTimeout(applyFilter, 600);
+}
+function onNote(idx) {
+  const radio = document.querySelector(`input[name="vv${idx}"]:checked`);
+  const ta    = document.getElementById(`ta${idx}`);
+  saveEntry(idx, radio?.value||'', ta?.value||'');
+}
+
+function updateProgress(d) {
+  const filled = PAIRS.filter(p => d[p.idx]?.verdict).length;
+  const total  = PAIRS.length;
+  document.getElementById('prog-txt').textContent = `${filled}/${total} reviewed`;
+  document.getElementById('prog-bar').style.width  = `${Math.round(100*filled/total)}%`;
+}
+
+function exportCSV() {
+  flushCurrentPage();
+  const d = loadData();
+  const hdr = ['pair_no','query_id','query_name','query_col','query_folder',
+                'nn_id','nn_name','nn_col','nn_folder','similarity','pair_type',
+                'verdict','note','timestamp'];
+  const rows = PAIRS.map(p => {
+    const e = d[p.idx]||{};
+    return [p.idx,p.qid,p.qname,p.qcol,p.qfld,p.nid,p.nname,p.ncol,p.nfld,
+            p.sim,p.note,e.verdict||'',( e.note||'').replace(/\n/g,' '),e.ts||''];
+  });
+  const csv = [hdr,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download = 'vn260_review_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+
+function clearAll() {
+  if (!confirm('Xoá toàn bộ ghi chú? Không thể hoàn tác.')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  applyFilter();
+}
+
+/* init */
+render();
+</script>
+</body>
+</html>
