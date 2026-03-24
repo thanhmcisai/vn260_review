@@ -131,8 +131,8 @@ textarea{width:100%;margin-top:7px;border:1px solid #dde;border-radius:4px;paddi
 
   <div class="filter-group" id="confused-filters" style="display:none">
     <span style="font-size:11px;color:#888">Filter:</span>
-    <button class="btn btn-filter act" data-filter="all"       onclick="setFilter(this,'confused')">All</button>
-    <button class="btn btn-filter" data-filter="new"          onclick="setFilter(this,'confused')">🔵 Chỉ tab này <span style="font-size:10px;opacity:.7">(22)</span></button>
+    <button class="btn btn-filter" data-filter="all"       onclick="setFilter(this,'confused')">All</button>
+    <button class="btn btn-filter act" data-filter="new"          onclick="setFilter(this,'confused')">🔵 Chỉ tab này <span style="font-size:10px;opacity:.7">(22)</span></button>
     <button class="btn btn-filter" data-filter="cross"        onclick="setFilter(this,'confused')">🌐 Cross-collection <span style="font-size:10px;opacity:.7">(12)</span></button>
     <button class="btn btn-filter" data-filter="same-col"     onclick="setFilter(this,'confused')">📦 Same-collection <span style="font-size:10px;opacity:.7">(60)</span></button>
     <button class="btn btn-filter" data-filter="unreviewed"   onclick="setFilter(this,'confused')">⬜ Chưa</button>
@@ -269,7 +269,7 @@ const VERDICTS_UNK = [
 ];
 
 let currentTab = 'pairs';
-let currentFilter = {pairs:'all',confused:'all',identity:'all',unknown:'all'};
+let currentFilter = {pairs:'all',confused:'new',identity:'all',unknown:'all'};
 let currentPage   = {pairs:1,confused:1,identity:1,unknown:1};
 let perPage       = {pairs:10,confused:10,identity:20,unknown:7};
 let searchQuery   = '';
@@ -564,11 +564,13 @@ function onNote(ns,idx) {
 // ── Progress ──
 function updateProgress() {
   const d=loadData();
-  const totals={pairs:109,confused:72,identity:96,unknown:7};
+  // confused: track only the 22 new pairs (not in Tab 1) — the 50 duplicates are tracked in Tab 1
+  const NEW_CONFUSED = CONFUSED.filter(c=>!c.in_tab1);
+  const totals={pairs:109,confused:NEW_CONFUSED.length,identity:96,unknown:7};
   const tab=currentTab;
   const filled={
     pairs:PAIRS.filter(p=>d.pairs?.[p.idx]?.verdict).length,
-    confused:CONFUSED.filter(p=>d.confused?.[p.idx]?.verdict).length,
+    confused:NEW_CONFUSED.filter(p=>d.confused?.[p.idx]?.verdict).length,
     identity:IDENTITY.filter(p=>d.identity?.[p.idx]?.verdict).length,
     unknown:UNKNOWNS.filter(p=>d.unknown?.[p.idx]?.verdict).length,
   };
@@ -576,7 +578,7 @@ function updateProgress() {
   document.getElementById('prog-txt').textContent=`${f}/${tot} reviewed`;
   document.getElementById('prog-bar').style.width=`${Math.round(100*f/tot)}%`;
   document.getElementById('tc-pairs').textContent=PAIRS.length;
-  document.getElementById('tc-confused').textContent=filled.confused+'/72';
+  document.getElementById('tc-confused').textContent=filled.confused+'/'+NEW_CONFUSED.length;
   document.getElementById('tc-identity').textContent=filled.identity+'/96';
   const uid=UNKNOWNS.filter(u=>['c1','c2','c3'].includes(d.unknown?.[u.idx]?.verdict)).length;
   document.getElementById('tc-unknown').textContent=uid+'/7';
